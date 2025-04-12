@@ -1,19 +1,15 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { executeQuery } from '../config/database.js';
-import { User, validateUser } from '../models/User.js';
+import prisma from '../config/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Check if any users exist
 const checkFirstUser = async (): Promise<boolean> => {
-  interface CountResult {
-    count: string | number;
-  }
-  const users = await executeQuery<CountResult>('SELECT COUNT(*) as count FROM users');
-  return users.length === 0 || parseInt(users[0].count.toString()) === 0;
+  const count = await prisma.user.count();
+  return count === 0;
 };
 
 // First-time admin setup
@@ -25,18 +21,21 @@ router.post('/init-admin', async (req, res) => {
     }
 
     const { first_name, last_name, email, password } = req.body;
-    const user: Partial<User> = {
-      first_name,
-      last_name,
-      email,
-      password,
-      role: 'admin'
-    };
+    
+    // Validate email format
+    if (!email?.includes('@')) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
 
-    // Validate user input
-    const validation = validateUser(user);
-    if (!validation.isValid) {
-      return res.status(400).json({ message: validation.error });
+    // Validate password
+    const minLength = 8;
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    
+    if (password.length < minLength || !hasLowerCase || !hasUpperCase) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters long and contain both uppercase and lowercase letters'
+      });
     }
 
     // Hash password
@@ -44,14 +43,22 @@ router.post('/init-admin', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create admin user
-    const query = `
-      INSERT INTO users (first_name, last_name, email, password, role)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, first_name, last_name, email, role
-    `;
-    const values = [first_name, last_name, email, hashedPassword, 'admin'];
-    const result = await executeQuery<Partial<User>>(query, values);
-    const newUser = result[0];
+    const newUser = await prisma.user.create({
+      data: {
+        first_name,
+        last_name,
+        email,
+        password: hashedPassword,
+        role: 'admin'
+      },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        role: true
+      }
+    });
 
     // Generate JWT token
     const token = jwt.sign(
@@ -83,14 +90,13 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const query = 'SELECT * FROM users WHERE email = $1';
-    const users = await executeQuery<User>(query, [email]);
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
     
-    if (users.length === 0) {
+    if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-    
-    const user = users[0];
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);

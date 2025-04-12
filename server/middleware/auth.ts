@@ -1,6 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import prisma from '../config/prisma.js';
+import { Prisma } from '@prisma/client';
+
+// Define User type based on Prisma schema
+type User = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'moderator' | 'user';
+  created_at: Date;
+  updated_at: Date;
+};
 
 // Extend Express Request type to include user
 declare global {
@@ -35,11 +48,17 @@ export const authenticate = async (
       process.env.JWT_SECRET || 'default-secret'
     ) as JwtPayload;
 
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
     // Add user info to request object
-    req.user = {
-      id: decoded.userId,
-      role: decoded.role as User['role'],
-    } as User;
+    req.user = user as User;
 
     next();
   } catch (error) {
@@ -48,7 +67,7 @@ export const authenticate = async (
 };
 
 // Role-based authorization middleware
-export const authorize = (allowedRoles: User['role'][]) => {
+export const authorize = (allowedRoles: ('admin' | 'moderator' | 'user')[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -63,7 +82,7 @@ export const authorize = (allowedRoles: User['role'][]) => {
 };
 
 // Permission checking middleware for user operations
-export const checkUserPermissions = (
+export const checkUserPermissions = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -87,11 +106,21 @@ export const checkUserPermissions = (
   if (user.role === 'moderator') {
     if (req.method === 'DELETE') {
       // Check if target user is a basic user
-      // This requires database lookup in actual implementation
-      // For now, we'll add a placeholder that will be replaced with actual logic
-      // TODO: Implement user role check from database
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetUserId }
+      });
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (targetUser.role !== 'user') {
+        return res.status(403).json({ message: 'Moderators can only delete basic users' });
+      }
+      
       return next();
     }
+    
     if (user.id === targetUserId) {
       return next();
     }

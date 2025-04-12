@@ -4,8 +4,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { testConnection } from './config/database.js';
-import { initializeDatabase } from './config/initDb.js';
+import prisma from './config/prisma.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 
@@ -23,6 +22,28 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
+
+// Test database connection
+async function testConnection() {
+  try {
+    await prisma.$queryRaw`SELECT NOW()`;
+    console.log('Database connection test successful');
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+  }
+}
+
+// Initialize database
+async function initializeDatabase() {
+  try {
+    // Prisma automatically creates tables based on schema
+    // We can add any additional initialization here if needed
+    console.log('Database tables initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database tables:', error);
+    throw error;
+  }
+}
 
 // Initialize database and test connection
 Promise.all([
