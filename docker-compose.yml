@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - CLIENT_URL=http://localhost:3000
+      - JWT_SECRET=your-secret-key-here
+      - COOKIE_SECRET=your-cookie-secret-here
+      # Uncomment the database configuration you want to use
+      # PostgreSQL
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=config2page
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      # MySQL
+      # - DB_TYPE=mysql
+      # - DB_HOST=mysql
+      # - DB_PORT=3306
+      # - DB_NAME=config2page
+      # - DB_USER=root
+      # - DB_PASSWORD=mysql
+    depends_on:
+      - postgres
+      # - mysql # Uncomment to use MySQL
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: config2page
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Uncomment to use MySQL
+  # mysql:
+  #   image: mysql:8.0
+  #   ports:
+  #     - "3306:3306"
+  #   environment:
+  #     MYSQL_DATABASE: config2page
+  #     MYSQL_ROOT_PASSWORD: mysql
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+
+volumes:
+  postgres_data:
+  # mysql_data: # Uncomment to use MySQL
