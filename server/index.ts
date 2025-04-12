@@ -7,6 +7,8 @@ import path from 'path';
 import prisma from './config/prisma.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
+import auditRoutes from './routes/audit.js';
+import { captureIp } from './middleware/ipCapture.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +24,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
+app.use(captureIp);
 
 // Test database connection
 async function testConnection() {
@@ -54,6 +57,7 @@ Promise.all([
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

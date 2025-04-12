@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import LandingPage from './pages/LandingPage';
 import UserManagementPage from './pages/UserManagementPage';
+import AuditLogPage from './pages/AuditLogPage';
 import './App.css';
 
 const App: React.FC = () => {
@@ -29,6 +30,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <UserManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AuditLogPage />
               </ProtectedRoute>
             }
           />

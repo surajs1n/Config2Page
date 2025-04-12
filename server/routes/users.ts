@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/prisma.js';
 import { authenticate, authorize, checkUserPermissions } from '../middleware/auth.js';
+import { logUserAction, logUserEdit, AUDIT_TYPES } from '../services/auditService.js';
 
 const router = express.Router();
 
@@ -54,6 +55,22 @@ router.post('/', authenticate, async (req, res) => {
         updated_at: true
       }
     });
+
+    // Log user creation
+    if (req.user) {
+      await logUserAction(
+        req.user.id,
+        AUDIT_TYPES.CREATE_USER,
+        newUser.id,
+        { 
+          user_details: {
+            email: newUser.email,
+            role: newUser.role
+          }
+        },
+        req.clientIp
+      );
+    }
 
     res.status(201).json({
       message: 'User created successfully',
@@ -181,6 +198,17 @@ router.put('/:id', authenticate, checkUserPermissions, async (req, res) => {
       }
     });
 
+    // Log user edit
+    if (req.user) {
+      await logUserEdit(
+        req.user.id,
+        parseInt(id),
+        existingUser,
+        updatedUser,
+        req.clientIp
+      );
+    }
+
     res.json({
       message: 'User updated successfully',
       user: updatedUser
@@ -203,6 +231,22 @@ router.delete('/:id', authenticate, checkUserPermissions, async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Log user deletion before actually deleting
+    if (req.user) {
+      await logUserAction(
+        req.user.id,
+        AUDIT_TYPES.DELETE_USER,
+        parseInt(id),
+        {
+          user_details: {
+            email: user.email,
+            role: user.role
+          }
+        },
+        req.clientIp
+      );
     }
 
     // Delete user

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { logUserAction, AUDIT_TYPES } from '../services/auditService.js';
 
 const router = express.Router();
 
@@ -95,12 +96,28 @@ router.post('/login', async (req, res) => {
     });
     
     if (!user) {
+      // Log failed login attempt
+      await logUserAction(
+        0, // No actor ID for failed login
+        AUDIT_TYPES.LOGIN_FAILURE,
+        undefined, // No target user ID
+        { reason: 'User not found', email },
+        req.clientIp
+      );
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      // Log failed login attempt
+      await logUserAction(
+        0, // No actor ID for failed login
+        AUDIT_TYPES.LOGIN_FAILURE,
+        user.id,
+        { reason: 'Invalid password' },
+        req.clientIp
+      );
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -117,6 +134,15 @@ router.post('/login', async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
+
+    // Log successful login
+    await logUserAction(
+      user.id,
+      AUDIT_TYPES.LOGIN_SUCCESS,
+      user.id,
+      { browser: req.headers['user-agent'] },
+      req.clientIp
+    );
 
     // Return user info (excluding password)
     const { password: _, ...userWithoutPassword } = user;
@@ -154,7 +180,16 @@ router.get('/session', authenticate, (req, res) => {
 });
 
 // Logout route
-router.post('/logout', (req, res) => {
+router.post('/logout', authenticate, async (req, res) => {
+  if (req.user) {
+    await logUserAction(
+      req.user.id,
+      AUDIT_TYPES.LOGOUT,
+      req.user.id,
+      null,
+      req.clientIp
+    );
+  }
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
