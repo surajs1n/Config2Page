@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuditLog, AuditPagination, AUDIT_TYPES } from '../types/audit';
+import ProfileDropdown from '../components/ProfileDropdown';
 
 // API base URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -127,9 +128,12 @@ const AuditLogPage: React.FC = () => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-          <Link to="/" className="text-blue-600 hover:text-blue-800">
-            Back to Home
-          </Link>
+          <div className="flex items-center space-x-4 ml-auto">
+            <Link to="/" className="text-blue-600 hover:text-blue-800">
+              Back to Home
+            </Link>
+            <ProfileDropdown />
+          </div>
         </div>
       </header>
 

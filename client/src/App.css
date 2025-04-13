@@ -115,6 +115,18 @@ code {
   background-color: #2563eb;
 }
 
+.bg-purple-100 {
+  background-color: #f5f3ff;
+}
+
+.bg-purple-600 {
+  background-color: #7c3aed;
+}
+
+.hover\:bg-purple-700:hover {
+  background-color: #6d28d9;
+}
+
 .bg-red-600 {
   background-color: #dc2626;
 }
@@ -162,6 +174,10 @@ code {
 
 .text-blue-800 {
   color: #1e40af;
+}
+
+.text-purple-800 {
+  color: #5b21b6;
 }
 
 .text-red-500 {

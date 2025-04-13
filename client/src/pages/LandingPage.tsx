@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ProfileDropdown from '../components/ProfileDropdown';
 
 const LandingPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -13,22 +14,10 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
           <h1 className="text-2xl font-bold text-gray-900">Config2Page</h1>
-          <div className="flex items-center space-x-4">
-            {user && (
-              <>
-                <span className="text-sm text-gray-700">
-                  Welcome, {user.first_name} ({user.role})
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                  Logout
-                </button>
-              </>
-            )}
+          <div className="ms-auto">
+            <ProfileDropdown />
           </div>
         </div>
       </header>
@@ -63,7 +52,7 @@ const LandingPage: React.FC = () => {
           )}
 
           {/* Navigation cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="text-lg font-medium mb-2">User Management</h3>
               <p className="text-gray-600 mb-4">
@@ -75,21 +64,6 @@ const LandingPage: React.FC = () => {
               >
                 Go to User Management
               </Link>
-            </div>
-
-            <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-medium mb-2">Your Profile</h3>
-              <p className="text-gray-600 mb-4">
-                View and edit your personal information.
-              </p>
-              {user && (
-                <Link
-                  to={`/users/${user.id}`}
-                  className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  View Profile
-                </Link>
-              )}
             </div>
 
             {/* Audit Logs Card (Admin Only) */}
