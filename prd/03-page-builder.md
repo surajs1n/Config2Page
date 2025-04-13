@@ -164,17 +164,6 @@ Build a system that renders dynamic web pages based on JSON configuration object
 
 ---
 
-## 6. 🛠️ Technologies
-
-| Layer    | Stack                        |
-| -------- | ---------------------------- |
-| Frontend | React (Next.js), TailwindCSS |
-| Backend  | Node.js (Express or Fastify) |
-| DB       | PostgreSQL                   |
-| Hosting  | Vercel / Render / AWS        |
-
----
-
 ## 7. 🔒 Non-Functional Requirements
 
 - Configs are stored persistently in DB
