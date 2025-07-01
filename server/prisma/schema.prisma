@@ -1,0 +1,50 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  first_name String   @db.VarChar(100)
+  last_name  String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.Text
+  role       Role     @default(user)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Audit log relations
+  actorLogs  AuditLog[] @relation("ActorLogs")
+  targetLogs AuditLog[] @relation("TargetLogs")
+
+  @@map("users")
+}
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  actor_user_id Int
+  action_type   String
+  target_user_id Int?
+  metadata      Json
+  ip_address    String?  @db.VarChar(45)
+  created_at    DateTime @default(now())
+  
+  actor         User     @relation("ActorLogs", fields: [actor_user_id], references: [id])
+  target        User?    @relation("TargetLogs", fields: [target_user_id], references: [id])
+  
+  @@index([action_type])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+enum Role {
+  admin
+  moderator
+  user
+}
